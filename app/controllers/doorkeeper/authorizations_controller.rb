@@ -3,9 +3,16 @@ module Doorkeeper
     before_filter :authenticate_resource_owner!
 
     def new
-      if pre_auth.authorizable?
+      puts "============================ working"
+      if current_resource_owner.nil?
+        render json: { "error" => "invalid parent record" }
+      elsif pre_auth.authorizable?
         if Doorkeeper::AccessToken.matching_token_for(pre_auth.client, current_resource_owner.id, pre_auth.scopes) || skip_authorization?
           auth = authorization.authorize
+          puts "======================== generate pin"
+          puts "======================== #{current_resource_owner.pin}"
+          current_resource_owner.pass_code
+          puts "======================== after authoriz"
           redirect_to auth.redirect_uri
         else
           render :new

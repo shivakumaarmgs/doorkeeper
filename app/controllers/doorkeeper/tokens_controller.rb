@@ -4,6 +4,8 @@ module Doorkeeper
     include ActionController::RackDelegation
     include ActionController::Instrumentation
 
+    before_filter :authenticate_sms, only: [:create]
+
     def create
       response = strategy.authorize
       self.headers.merge! response.headers
@@ -45,5 +47,22 @@ module Doorkeeper
     def strategy
       @strategy ||= server.token_request params[:grant_type]
     end
+
+    def authenticate_sms
+      if params[:grant_type] != "refresh_token"
+        puts "======================#{current_resource_owner.first_name}"
+        if params[:otp_pin] != current_resource_owner.pin
+          render json: { "error" => "invalid otp" }, status: 200
+        end
+      end
+    end
+    #def current_parent_resource=(parent)
+    #@current_parent = parent
+    #end
+
+    #def current_parent_resource
+    #remember_token = Parent.digest(cookies[:remember_token])
+    #@current_parent ||= Parent.find_by(remember_token: remember_token)
+    #end
   end
 end
